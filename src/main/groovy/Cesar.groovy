@@ -14,7 +14,8 @@ String text = 'SYKMA OTTGB GOZPG SGOYK AJKHU TNKAX GBKIY KYINB XKYOR RKYVK XJGOZ
 
 Character.metaClass.shift = { int decal ->
     if (delegate == ' ') return delegate
-    (delegate + decal - ('A' as char)) % 26 + ('A' as char) as char
+    char origin = delegate.isLowerCase() ? 'a' as char : 'A' as char
+    ((delegate + decal - origin) % 26 + origin) as char
 }
 
 String.metaClass.shift = { int decal ->
@@ -25,7 +26,36 @@ String.metaClass.shift = { int decal ->
     buff as String
 }
 
-26.times {
-    String  = text.shift(it)
-
+String.metaClass.usages = {
+    Map usages = [:]
+    delegate.each {
+        Integer usage = usages[it]?: 0
+        usages[it] = ++usage
+    }
+    usages = usages.collectEntries { String letter, int count ->
+        [(letter): (count as float) / delegate.length()]
+    }
+    usages = usages.sort { a, b ->
+        int result = 0
+        if (a.value > b.value) {
+            return -1
+        } else if (a.value < b.value) {
+            return 1
+        }
+        return 0
+    }
+    usages.remove(' ')
+    usages
 }
+
+String.metaClass.mostUsed {
+    delegate.usages().max({ it.value }).key
+}
+
+int candidate = (1..26).find {
+    String attempt = text.shift(it)
+    println attempt
+    if (attempt.mostUsed() == 'E') return true
+}
+
+println "Candidate : $candidate"
